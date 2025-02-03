@@ -15,6 +15,8 @@ spec:
       labels:
         app.kubernetes.io/name: {{ include "erpnext.name" . }}-worker-l
         app.kubernetes.io/instance: {{ .Release.Name }}-worker-l
+      annotations:
+        force-update: "{{ now | date "20060102-150405" }}"        
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
