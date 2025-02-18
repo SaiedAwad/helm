@@ -318,8 +318,8 @@ jobs:
     # jobName: ""
     enabled: false
     forceCreate: false
-    siteName: "bench-k8s.nixpend.com"
-    dbName: "bench-k8s"
+    siteName: "erp.cluster.local"
+    dbName: "dbname"
     adminPassword: "0000"
     # installApps:
     dbType: "mariadb"
@@ -333,7 +333,7 @@ jobs:
     # jobName: ""
     enabled: false
     forced: true
-    siteName: "bench-k8s.nixpend.com"
+    siteName: "erp.cluster.local"
     backoffLimit: 0
     resources: {}
     nodeSelector: {}
@@ -368,7 +368,7 @@ jobs:
     image:
       repository: nixpend/rclone-custom
       tag: latest
-    backoffLimit: 3
+    backoffLimit: 0
     restartPolicy: OnFailure
     providerName: changeit
     bucketName: changeit
@@ -403,16 +403,16 @@ jobs:
 
   custom:
     enabled: false
-    jobName: ""
-    labels: {}
+    # jobName: "my-custom-job"
+    containerName: "custom-job-container"
+    imagePullPolicy: "IfNotPresent"
+    command: ["/bin/sh", "-c"]
+    args: ["bench --site k8s-2.nixpend.com set-admin-password 1111"]
     backoffLimit: 0
-    initContainers: []
-    containers: []
     restartPolicy: Never
-    volumes: []
-    nodeSelector: {}
-    affinity: {}
-    tolerations: []
+    # env:
+    #   - name: MY_ENV_VAR
+    #     value: "example"
 
 imagePullSecrets:
   - name: registry
