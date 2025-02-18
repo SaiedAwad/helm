@@ -2,11 +2,15 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
+    {{- if .Values.jobs.custom.jobName }}
   name: {{ .Values.jobs.custom.jobName }}
+  {{- else }}
+  name: {{ template "erpnext.fullname" . }}-custom-{{ now | date "20060102150405" }}
+  {{- end }}
   labels:
     {{- if .Values.jobs.custom.labels }}
     {{ toYaml .Values.jobs.custom.labels | indent 4 }}
-    {{- else}}
+    {{- else }}
     {{- include "erpnext.labels" . | nindent 4 }}
     {{- end }}
 spec:
@@ -24,25 +28,67 @@ spec:
     {{- end }}
       securityContext:
         {{- toYaml $.Values.podSecurityContext | nindent 8 }}
-    {{- with .Values.jobs.custom.containers }}
       containers:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
+        - name: {{ .Values.jobs.custom.containerName | default "custom-job" }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.jobs.custom.imagePullPolicy | default "IfNotPresent" }}
+          {{- with .Values.jobs.custom.command }}
+          command: 
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.jobs.custom.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.jobs.custom.env }}
+          env:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.jobs.custom.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: sites-dir
+              mountPath: /home/frappe/frappe-bench/sites
+            - name: logs
+              mountPath: /home/frappe/frappe-bench/logs          
       restartPolicy: {{ .Values.jobs.custom.restartPolicy }}
-    {{- with .Values.jobs.custom.volumes }}
       volumes:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
-      {{- with .Values.jobs.custom.nodeSelector }}
+        - name: sites-dir
+          {{- if .Values.persistence.worker.enabled }}
+          persistentVolumeClaim:
+            {{- if .Values.persistence.worker.existingClaim }}
+            claimName: {{ .Values.persistence.worker.existingClaim }}
+            {{- else }}
+            claimName: {{ template "erpnext.fullname" . }}
+            {{- end }}
+            readOnly: false
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: logs
+          {{- if .Values.persistence.logs.enabled }}
+          persistentVolumeClaim:
+            {{- if .Values.persistence.logs.existingClaim }}
+            claimName: {{ .Values.persistence.logs.existingClaim }}
+            {{- else }}
+            claimName: {{ template "erpnext.fullname" . }}-logs
+            {{- end }}
+            readOnly: false
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+    {{- with .Values.jobs.custom.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.jobs.custom.affinity }}
+    {{- end }}
+    {{- with .Values.jobs.custom.affinity }}
       affinity:
         {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.jobs.custom.tolerations }}
+    {{- end }}
+    {{- with .Values.jobs.custom.tolerations }}
       tolerations:
         {{- toYaml . | nindent 8 }}
-      {{- end }}
+    {{- end }}
 {{- end }}
